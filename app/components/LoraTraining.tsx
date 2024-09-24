@@ -160,30 +160,34 @@ function LoraTraining() {
     let attempts = 0;
 
     const checkStatus = async () => {
-      // Replace the direct fal.queue.status call with a fetch to our API route
-      const response = await fetch(`/api/lora-training-status?requestId=${requestId}`);
-      const status = await response.json();
+      try {
+        const response = await fetch(`/api/lora-training-status?requestId=${requestId}`);
+        const status = await response.json();
 
-      console.log("Status:", status.status);
+        console.log("Status:", status.status);
 
-      if (status.status === 'COMPLETED') {
-        // Replace the direct fal.queue.result call with a fetch to our API route
-        const resultResponse = await fetch(`/api/lora-training-result?requestId=${requestId}`);
-        const result = await resultResponse.json();
-        if (result && result.diffusers_lora_file && result.diffusers_lora_file.url) {
-          const modelUrl = result.diffusers_lora_file.url;
-          setResult(modelUrl);
-          await saveModelToUserAccount(modelUrl);
+        if (status.status === 'COMPLETED') {
+          const resultResponse = await fetch(`/api/lora-training-result?requestId=${requestId}`);
+          const result = await resultResponse.json();
+          if (result && result.diffusers_lora_file && result.diffusers_lora_file.url) {
+            const modelUrl = result.diffusers_lora_file.url;
+            console.log('Training completed. Model URL:', modelUrl);
+            setResult(modelUrl);
+            await saveModelToUserAccount(modelUrl);
+          } else {
+            throw new Error('Unexpected result format from Lora training');
+          }
+        } else if (status.status === 'FAILED') {
+          throw new Error('Lora training failed: ' + (status.error || 'Unknown error'));
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(checkStatus, 30000); // Check every 30 seconds
         } else {
-          throw new Error('Unexpected result format from Lora training');
+          throw new Error('Timeout: Lora training took too long');
         }
-      } else if (status.status === 'FAILED') {
-        throw new Error('Lora training failed: ' + (status.error || 'Unknown error'));
-      } else if (attempts < maxAttempts) {
-        attempts++;
-        setTimeout(checkStatus, 30000); // Check every 30 seconds
-      } else {
-        throw new Error('Timeout: Lora training took too long');
+      } catch (error) {
+        console.error('Error in pollForResults:', error);
+        setError(error instanceof Error ? error.message : 'An unexpected error occurred');
       }
     };
 
@@ -194,18 +198,25 @@ function LoraTraining() {
     const user = auth.currentUser;
     if (user) {
       try {
-        await addDoc(collection(db, "loraModels"), {
+        console.log('Attempting to save model:', modelUrl);
+        const docRef = await addDoc(collection(db, "loraModels"), {
           userId: user.uid,
           url: modelUrl,
           triggerWord: triggerWord,
           createdAt: new Date()
         });
+        console.log('Model saved successfully with ID:', docRef.id);
         await fetchSavedModels();
       } catch (error) {
         console.error("Error saving model to user account:", error);
+        if (error instanceof FirebaseError) {
+          console.error("Firebase error code:", error.code);
+          console.error("Firebase error message:", error.message);
+        }
         setError("Failed to save the model to your account. Please try again.");
       }
     } else {
+      console.error("No authenticated user found when trying to save model");
       setError("User not authenticated. Please log in and try again.");
     }
   };
