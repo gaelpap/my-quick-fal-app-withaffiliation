@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { signOut } from 'firebase/auth';
 import JSZip from 'jszip';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
+import { User } from 'firebase/auth';
 
 function LoraTraining() {
   const [files, setFiles] = useState<File[]>([]);
@@ -19,19 +20,19 @@ function LoraTraining() {
   const [error, setError] = useState<string | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [checkingSubscription, setCheckingSubscription] = useState(true);
+  const [loraCredits, setLoraCredits] = useState<number>(0);
   const router = useRouter();
 
   useEffect(() => {
-    const checkSubscription = async (user: any) => {
+    const checkCredits = async (user: User) => {
       try {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         const userData = userDoc.data();
-        const subscriptionStatus = userData?.isLoraTrainingSubscribed || false;
-        console.log('Lora Training subscription status:', subscriptionStatus);
-        setIsSubscribed(subscriptionStatus);
+        const credits = userData?.loraCredits || 0;
+        setLoraCredits(credits);
       } catch (err) {
-        console.error('Error checking subscription:', err);
-        setError('Failed to check subscription status');
+        console.error('Error checking credits:', err);
+        setError('Failed to check credit status');
       } finally {
         setCheckingSubscription(false);
       }
@@ -39,17 +40,18 @@ function LoraTraining() {
 
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        checkSubscription(user);
+        checkCredits(user);
         fetchSavedModels();
       } else {
-        setIsSubscribed(false);
+        setLoraCredits(0);
         setCheckingSubscription(false);
-        router.push('/login');
+        // Allow access to the page even when not logged in
+        fetchSavedModels(); // Fetch public models or handle appropriately
       }
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, []);
 
   const fetchSavedModels = async () => {
     setError(null);
@@ -83,6 +85,10 @@ function LoraTraining() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (loraCredits <= 0) {
+      setError("You don't have enough credits. Please purchase more to start training.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
 
@@ -114,6 +120,10 @@ function LoraTraining() {
       }
 
       await pollForResults(data.request_id);
+
+      // Deduct a credit after successful training
+      await updateCredits(auth.currentUser!.uid, -1);
+      setLoraCredits(prevCredits => prevCredits - 1);
     } catch (error) {
       console.error('Error during Lora training:', error);
       if (error instanceof Error) {
@@ -200,6 +210,13 @@ function LoraTraining() {
     }
   };
 
+  const updateCredits = async (userId: string, change: number) => {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      loraCredits: increment(change)
+    });
+  };
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -211,61 +228,59 @@ function LoraTraining() {
   };
 
   if (checkingSubscription) {
-    return <div>Checking subscription status...</div>;
-  }
-
-  if (!isSubscribed) {
-    return (
-      <div className="container mx-auto p-4 bg-white shadow-lg rounded-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-800">Lora Training Subscription Required</h1>
-          <Button onClick={handleLogout} className="bg-red-500 text-white">
-            Logout
-          </Button>
-        </div>
-        <p className="mb-4">You need to subscribe to access the Lora Training feature.</p>
-        <button
-          onClick={() => router.push('/subscription')}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Subscribe Now
-        </button>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
   return (
     <div className="container mx-auto p-4 bg-white shadow-lg rounded-lg">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold text-gray-800">Lora Training</h1>
-        <Button onClick={handleLogout} className="bg-red-500 text-white">
-          Logout
-        </Button>
+        <div>
+          {auth.currentUser ? (
+            <>
+              <span className="mr-4">Credits: {loraCredits}</span>
+              {loraCredits <= 0 && (
+                <button
+                  onClick={() => router.push('/purchase-credits')}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Purchase Credits
+                </button>
+              )}
+              <Button onClick={handleLogout} className="bg-red-500 text-white ml-2">
+                Logout
+              </Button>
+            </>
+          ) : (
+            <Button onClick={() => router.push('/login')} className="bg-blue-500 text-white">
+              Login
+            </Button>
+          )}
+        </div>
       </div>
-      <form onSubmit={handleSubmit} className="mb-8">
-        <div className="mb-4">
-          <label className="block mb-2 text-gray-700">Upload Images (ZIP file recommended)</label>
-          <input type="file" multiple onChange={handleFileUpload} className="border p-2 w-full text-gray-700" />
-        </div>
-        <div className="mb-4">
-          <label className="block mb-2 text-gray-700">Trigger Word</label>
-          <input
-            type="text"
-            value={triggerWord}
-            onChange={(e) => setTriggerWord(e.target.value)}
-            placeholder="Trigger Word"
-            className="border p-2 w-full text-gray-700"
-          />
-        </div>
-        <button type="submit" disabled={isLoading} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-          {isLoading ? 'Training...' : 'Start Training'}
-        </button>
-      </form>
-      {result && (
-        <div className="mb-8">
-          <h2 className="text-xl font-bold mb-2 text-gray-800">Training Complete</h2>
-          <a href={result} download className="text-blue-500 hover:text-blue-700 underline">Download Lora Model</a>
-        </div>
+      {auth.currentUser && (
+        <form onSubmit={handleSubmit} className="mb-8">
+          <div className="mb-4">
+            <label className="block mb-2 text-gray-700">Upload Images (ZIP file recommended)</label>
+            <input type="file" multiple onChange={handleFileUpload} className="border p-2 w-full text-gray-700" />
+          </div>
+          <div className="mb-4">
+            <label className="block mb-2 text-gray-700">Trigger Word</label>
+            <input
+              type="text"
+              value={triggerWord}
+              onChange={(e) => setTriggerWord(e.target.value)}
+              placeholder="Trigger Word"
+              className="border p-2 w-full text-gray-700"
+            />
+          </div>
+          <button type="submit" disabled={isLoading || loraCredits <= 0} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            {isLoading ? 'Training...' : (loraCredits > 0 ? 'Start Training' : 'No Credits')}
+          </button>
+        </form>
+      )}
+      {!auth.currentUser && (
+        <p className="mb-4">Log in to start training your own Lora models.</p>
       )}
       {error && (
         <div className="mb-4 p-4 bg-red-100 text-red-700 rounded">
