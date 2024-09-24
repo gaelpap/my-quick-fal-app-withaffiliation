@@ -6,7 +6,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2022-11-15',
 });
 
-const IMAGE_CREDITS_PRICE_ID = 'price_1Q2f46EI2MwEjNuQqxAJwo79'; // Updated price ID for 100 image credits
+const IMAGE_CREDITS_PRICE_ID = 'price_1Q2f46EI2MwEjNuQqxAJwo79';
 
 export async function POST(req: Request) {
   try {
@@ -34,8 +34,8 @@ export async function POST(req: Request) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/image-generator?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/image-generator`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/`,
       client_reference_id: userId,
     });
 

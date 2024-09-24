@@ -13,6 +13,7 @@ import { doc, getDoc, updateDoc, increment, collection, setDoc } from 'firebase/
 import { loadStripe } from '@stripe/stripe-js';
 import Image from 'next/image';
 import { Select } from "@/components/ui/select"
+import { useSearchParams } from 'next/navigation';
 
 interface LoRA {
   path: string;
@@ -29,6 +30,7 @@ export function Page() {
   const [credits, setCredits] = useState(0);
   const [language, setLanguage] = useState('en')
   const [translatedPrompt, setTranslatedPrompt] = useState('')
+  const searchParams = useSearchParams();
 
   const router = useRouter()
 
@@ -198,6 +200,32 @@ export function Page() {
       alert('Failed to initiate purchase. Please try again.');
     }
   };
+
+  const checkPaymentStatus = async (sessionId: string) => {
+    try {
+      const response = await fetch(`/api/check-payment?session_id=${sessionId}`);
+      const data = await response.json();
+      if (data.success) {
+        // Refresh the user's credit count
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          const userCredits = userDoc.data()?.imageCredits || 0;
+          setCredits(userCredits);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Check for session_id in URL
+    const sessionId = searchParams.get('session_id');
+    if (sessionId) {
+      checkPaymentStatus(sessionId);
+    }
+  }, [searchParams]);
 
   return (
     <div className="container mx-auto p-4">
