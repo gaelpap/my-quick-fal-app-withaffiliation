@@ -18,6 +18,7 @@ export async function GET(req: Request) {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.payment_status === 'paid') {
       // Payment was successful, credits should have been added by the webhook
+      // You might want to double-check here and add credits if they weren't added by the webhook
       return NextResponse.json({ success: true });
     } else {
       return NextResponse.json({ success: false });
