@@ -7,6 +7,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 const CREDITS_PER_PURCHASE = 3;
+const IMAGE_CREDITS_PER_PURCHASE = 100;
 
 async function ensureUserDocument(userId: string) {
   const userRef = db.collection('users').doc(userId);
@@ -47,13 +48,32 @@ export async function POST(req: Request) {
         const userRef = db.collection('users').doc(userId);
         await db.runTransaction(async (transaction) => {
           const userDoc = await transaction.get(userRef);
-          const currentCredits = userDoc.data()?.loraCredits || 0;
-          console.log('Current credits:', currentCredits);
-          transaction.update(userRef, {
-            loraCredits: currentCredits + CREDITS_PER_PURCHASE
-          });
+          const currentImageCredits = userDoc.data()?.imageCredits || 0;
+          const currentLoraCredits = userDoc.data()?.loraCredits || 0;
+          console.log('Current image credits:', currentImageCredits);
+          console.log('Current Lora credits:', currentLoraCredits);
+          
+          // Check the line items to determine which product was purchased
+          const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+          const purchasedItem = lineItems.data[0];
+          
+          if (purchasedItem.price.id === 'price_1Q2f46EI2MwEjNuQqxAJwo79') {
+            // Image credits purchase
+            transaction.update(userRef, {
+              imageCredits: currentImageCredits + IMAGE_CREDITS_PER_PURCHASE
+            });
+            console.log(`Added ${IMAGE_CREDITS_PER_PURCHASE} image credits to user ${userId}`);
+          } else if (purchasedItem.price.id === 'price_1Q2cMtEI2MwEjNuQOwcPYUCk') {
+            // Lora credits purchase
+            transaction.update(userRef, {
+              loraCredits: currentLoraCredits + CREDITS_PER_PURCHASE
+            });
+            console.log(`Added ${CREDITS_PER_PURCHASE} Lora credits to user ${userId}`);
+          } else {
+            console.error('Unknown product purchased');
+            return NextResponse.json({ error: 'Unknown product purchased' }, { status: 400 });
+          }
         });
-        console.log(`Added ${CREDITS_PER_PURCHASE} credits to user ${userId}`);
         return NextResponse.json({ received: true });
       } catch (error) {
         console.error('Error updating user credits:', error);
