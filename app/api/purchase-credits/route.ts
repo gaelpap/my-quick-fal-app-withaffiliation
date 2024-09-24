@@ -10,12 +10,19 @@ const LORA_CREDITS_PRICE_ID = 'price_1Q2cMtEI2MwEjNuQOwcPYUCk';
 
 export async function POST(req: Request) {
   try {
-    const token = req.headers.get('Authorization')?.split('Bearer ')[1];
-    if (!token) {
+    const idToken = req.headers.get('Authorization')?.split('Bearer ')[1];
+    if (!idToken) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
-    const decodedToken = await auth.verifyIdToken(token);
+    let decodedToken;
+    try {
+      decodedToken = await auth.verifyIdToken(idToken);
+    } catch (error) {
+      console.error('Error verifying token:', error);
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
     const userId = decodedToken.uid;
 
     const session = await stripe.checkout.sessions.create({

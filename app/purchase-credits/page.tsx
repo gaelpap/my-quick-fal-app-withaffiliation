@@ -20,11 +20,17 @@ export default function PurchaseCredits() {
     }
 
     try {
+      const idToken = await user.getIdToken();
       const response = await fetch('/api/purchase-credits', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json',
+        },
       });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
       if (data.sessionId) {
