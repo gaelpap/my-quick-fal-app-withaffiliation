@@ -21,6 +21,7 @@ function LoraTraining() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [checkingSubscription, setCheckingSubscription] = useState(true);
   const [loraCredits, setLoraCredits] = useState<number>(0);
+  const [trainingMessage, setTrainingMessage] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -91,6 +92,7 @@ function LoraTraining() {
     }
     setIsLoading(true);
     setError(null);
+    setTrainingMessage(null);
 
     try {
       if (files.length === 0) {
@@ -124,6 +126,7 @@ function LoraTraining() {
       // Deduct a credit after successful training
       await updateCredits(auth.currentUser!.uid, -1);
       setLoraCredits(prevCredits => prevCredits - 1);
+      setTrainingMessage("Your training will be ready and saved here in a few minutes.");
     } catch (error) {
       console.error('Error during Lora training:', error);
       if (error instanceof Error) {
@@ -249,7 +252,7 @@ function LoraTraining() {
         <div>
           {auth.currentUser ? (
             <>
-              <span className="mr-4">Credits: {loraCredits}</span>
+              <span className="mr-4 text-lg font-bold text-black">Credits: {loraCredits}</span>
               {loraCredits <= 0 && (
                 <button
                   onClick={() => router.push('/purchase-credits')}
@@ -296,6 +299,11 @@ function LoraTraining() {
       {error && (
         <div className="mb-4 p-4 bg-red-100 text-red-700 rounded">
           {error}
+        </div>
+      )}
+      {trainingMessage && (
+        <div className="mb-4 p-4 bg-green-100 text-green-700 rounded">
+          {trainingMessage}
         </div>
       )}
       <div>
