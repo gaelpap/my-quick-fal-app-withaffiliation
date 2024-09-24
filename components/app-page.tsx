@@ -232,7 +232,7 @@ export function Page() {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Image Generator</h1>
         <div className="flex items-center">
-          <span className="mr-4 text-lg font-semibold">Credits: {credits}</span>
+          <span className="mr-4 text-lg font-bold text-black">Credits: {credits}</span>
           <Button onClick={handlePurchaseCredits} className="bg-blue-500 text-white mr-2">
             Purchase Credits
           </Button>
