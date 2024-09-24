@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
+import { loadStripe } from '@stripe/stripe-js';
 
 export default function PurchaseCredits() {
   const [isLoading, setIsLoading] = useState(false);
@@ -22,11 +23,19 @@ export default function PurchaseCredits() {
       const response = await fetch('/api/purchase-credits', {
         method: 'POST',
       });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       if (data.sessionId) {
-        // Redirect to Stripe Checkout
         const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-        await stripe?.redirectToCheckout({ sessionId: data.sessionId });
+        if (!stripe) {
+          throw new Error('Failed to load Stripe');
+        }
+        const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+        if (error) {
+          throw error;
+        }
       } else {
         throw new Error('Failed to create checkout session');
       }
