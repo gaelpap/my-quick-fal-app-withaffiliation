@@ -14,8 +14,18 @@ function CheckoutComponent() {
       });
 
       console.log('Response status:', response.status);
-      const data = await response.json();
-      console.log('Response data:', data);
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Error parsing JSON:', parseError);
+        throw new Error('Invalid JSON response');
+      }
+
+      console.log('Parsed data:', data);
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to create checkout session');
