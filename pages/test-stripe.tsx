@@ -6,6 +6,7 @@ export default function TestStripe() {
 
   const handleClick = async () => {
     try {
+      console.log('Initiating test purchase...');
       const response = await fetch('/api/purchase-image-credits', {
         method: 'POST',
         headers: {
@@ -13,12 +14,20 @@ export default function TestStripe() {
         },
       });
 
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Response data:', data);
+
       if (!response.ok) {
-        throw new Error('Failed to create checkout session');
+        throw new Error(data.message || 'Failed to create checkout session');
       }
 
-      const { id, url } = await response.json();
-      setSessionUrl(url);
+      if (!data.url) {
+        throw new Error('No checkout URL provided');
+      }
+
+      setSessionUrl(data.url);
+      console.log('Checkout URL:', data.url);
     } catch (err) {
       console.error('Error:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
