@@ -1,4 +1,4 @@
-import LoraTraining from '@/app/components/LoraTraining';
+import LoraTraining from '../components/LoraTraining';
 
 export default function LoraTrainingPage() {
   return <LoraTraining />;

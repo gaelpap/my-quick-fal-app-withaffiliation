@@ -241,6 +241,26 @@ function LoraTraining() {
     }
   };
 
+  const handlePurchaseCredits = async () => {
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          credits: 3, // Or any other number of credits you want to offer
+        }),
+      });
+
+      const { url } = await response.json();
+      router.push(url);
+    } catch (error) {
+      console.error('Error initiating checkout:', error);
+      setError('Failed to initiate checkout. Please try again.');
+    }
+  };
+
   if (checkingSubscription) {
     return <div>Loading...</div>;
   }
@@ -254,7 +274,7 @@ function LoraTraining() {
             <>
               <span className="mr-4 text-lg font-bold text-black">Credits: {loraCredits}</span>
               <button
-                onClick={() => router.push('/purchase-credits')}
+                onClick={handlePurchaseCredits}
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2"
               >
                 Purchase Credits
