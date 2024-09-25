@@ -34,3 +34,17 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Affiliate Program
+
+This project uses Rewardful for its affiliate program. Affiliates can earn a 30% commission on each transaction they refer.
+
+To set up Rewardful:
+
+1. Register at [Rewardful](https://www.rewardful.com/)
+2. Set up your campaign
+3. Add your Rewardful ID to the `.env.local` file
+4. Ensure the Rewardful script is loaded in `pages/_document.tsx`
+5. Track conversions in your checkout process
+
+For more details, see the [Rewardful documentation](https://www.rewardful.com/docs).
