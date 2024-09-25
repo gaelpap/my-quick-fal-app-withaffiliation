@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.status(200).json({ id: session.id })
     } catch (err) {
       console.error('Error creating checkout session:', err)
-      res.status(500).json({ statusCode: 500, message: err.message || 'Error creating checkout session' })
+      res.status(500).json({ statusCode: 500, message: err instanceof Error ? err.message : 'Error creating checkout session' })
     }
   } else {
     res.setHeader('Allow', 'POST')
