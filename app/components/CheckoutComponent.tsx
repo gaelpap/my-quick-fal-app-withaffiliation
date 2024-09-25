@@ -3,11 +3,9 @@ import { useState } from 'react';
 function CheckoutComponent() {
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-
+  const handlePurchase = async () => {
     try {
+      console.log('Initiating purchase...');
       const response = await fetch('/api/purchase-image-credits', {
         method: 'POST',
         headers: {
@@ -15,19 +13,20 @@ function CheckoutComponent() {
         },
       });
 
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Response data:', data);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create checkout session');
+        throw new Error(data.message || 'Failed to create checkout session');
       }
 
-      const { url } = await response.json();
-      
-      if (!url) {
+      if (!data.url) {
         throw new Error('No checkout URL provided');
       }
 
-      // Redirect to Stripe Checkout
-      window.location.href = url;
+      console.log('Redirecting to:', data.url);
+      window.location.href = data.url;
     } catch (err) {
       console.error('Purchase error:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
@@ -36,9 +35,7 @@ function CheckoutComponent() {
 
   return (
     <div>
-      <form onSubmit={handleSubmit}>
-        <button type="submit">Purchase Credits</button>
-      </form>
+      <button onClick={handlePurchase}>Purchase Credits</button>
       {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
   );
