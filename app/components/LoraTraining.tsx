@@ -253,8 +253,12 @@ function LoraTraining() {
         }),
       });
 
-      const { url } = await response.json();
-      router.push(url);
+      const data = await response.json();
+      if (response.ok) {
+        router.push(data.url);
+      } else {
+        throw new Error(data.error || 'Failed to initiate checkout');
+      }
     } catch (error) {
       console.error('Error initiating checkout:', error);
       setError('Failed to initiate checkout. Please try again.');
