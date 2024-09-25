@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 export default function TestStripe() {
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionUrl, setSessionUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleClick = async () => {
@@ -17,8 +17,8 @@ export default function TestStripe() {
         throw new Error('Failed to create checkout session');
       }
 
-      const { id } = await response.json();
-      setSessionId(id);
+      const { id, url } = await response.json();
+      setSessionUrl(url);
     } catch (err) {
       console.error('Error:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
@@ -29,10 +29,9 @@ export default function TestStripe() {
     <div>
       <h1>Test Stripe Integration</h1>
       <button onClick={handleClick}>Create Checkout Session</button>
-      {sessionId && (
+      {sessionUrl && (
         <p>
-          Session ID: {sessionId}{' '}
-          <a href={`https://checkout.stripe.com/pay/${sessionId}`} target="_blank" rel="noopener noreferrer">
+          <a href={sessionUrl} target="_blank" rel="noopener noreferrer">
             Go to Checkout
           </a>
         </p>
