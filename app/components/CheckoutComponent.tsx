@@ -16,13 +16,18 @@ function CheckoutComponent() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create checkout session');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create checkout session');
       }
 
-      const { id: sessionId } = await response.json();
+      const { url } = await response.json();
       
+      if (!url) {
+        throw new Error('No checkout URL provided');
+      }
+
       // Redirect to Stripe Checkout
-      window.location.href = `https://checkout.stripe.com/pay/${sessionId}`;
+      window.location.href = url;
     } catch (err) {
       console.error('Purchase error:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');

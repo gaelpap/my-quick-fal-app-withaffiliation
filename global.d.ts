@@ -3,6 +3,9 @@ interface Window {
 }
 
 declare namespace NodeJS {
+  interface Process {
+    env: ProcessEnv;
+  }
   interface ProcessEnv {
     NEXT_PUBLIC_REWARDFUL_ID?: string;
     STRIPE_SECRET_KEY?: string;
