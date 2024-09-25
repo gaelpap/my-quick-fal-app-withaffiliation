@@ -11,6 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     try {
       console.log('Attempting to create Stripe checkout session...')
+      console.log('Base URL:', baseUrl)
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
@@ -35,8 +36,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (err) {
       console.error('Error creating checkout session:', err)
       if (err instanceof Stripe.errors.StripeError) {
-        res.status(500).json({ statusCode: 500, message: err.message })
+        console.error('Stripe error details:', err.type, err.raw)
+        res.status(500).json({ statusCode: 500, message: err.message, type: err.type })
       } else {
+        console.error('Unexpected error details:', err)
         res.status(500).json({ statusCode: 500, message: 'An unexpected error occurred' })
       }
     }
