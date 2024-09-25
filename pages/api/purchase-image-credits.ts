@@ -2,12 +2,16 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16', // Update this to the latest stable version
+  apiVersion: '2024-06-20', // Update this to match your Stripe library version
 })
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.ai-photo-creator.com'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log('API route called');
+  console.log('Request method:', req.method);
+  console.log('Request body:', req.body);
+
   if (req.method === 'POST') {
     try {
       console.log('Attempting to create Stripe checkout session...')

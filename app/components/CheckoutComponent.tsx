@@ -20,12 +20,11 @@ function CheckoutComponent() {
       let data;
       try {
         data = JSON.parse(responseText);
+        console.log('Parsed data:', data);
       } catch (parseError) {
         console.error('Error parsing JSON:', parseError);
         throw new Error('Invalid JSON response');
       }
-
-      console.log('Parsed data:', data);
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to create checkout session');
