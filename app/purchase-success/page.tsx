@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function PurchaseSuccess() {
   const [credits, setCredits] = useState<number | null>(null);
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
