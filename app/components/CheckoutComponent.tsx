@@ -2,8 +2,12 @@ import { useEffect } from 'react';
 
 function CheckoutComponent() {
   const handleConversion = (email: string) => {
+    console.log('Attempting to track conversion for:', email);
     if (typeof window !== 'undefined' && window.rewardful) {
       window.rewardful('convert', { email: email });
+      console.log('Conversion tracked successfully');
+    } else {
+      console.error('Rewardful not available');
     }
   };
 
@@ -12,7 +16,9 @@ function CheckoutComponent() {
   // handleConversion('customer@example.com');
 
   return (
-    // Your checkout component JSX
+    <div>
+      {/* Your checkout component JSX */}
+    </div>
   );
 }
 

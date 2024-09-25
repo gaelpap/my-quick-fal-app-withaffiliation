@@ -10,7 +10,7 @@ export default function Document() {
             (function(w,r){w._rwq=r;w[r]=w[r]||function(){(w[r].q=w[r].q||[]).push(arguments)}})(window,'rewardful');
           `
         }} />
-        <script async src='https://r.wdfl.co/rw.js' data-rewardful='468044'></script>
+        <script async src='https://r.wdfl.co/rw.js' data-rewardful={process.env.NEXT_PUBLIC_REWARDFUL_ID}></script>
       </Head>
       <body>
         <Main />
