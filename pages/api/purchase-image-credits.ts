@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16', // Update to the latest stable API version
+  apiVersion: '2023-10-16',
 })
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.ai-photo-creator.com'
@@ -12,6 +12,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       console.log('Attempting to create Stripe checkout session...')
       console.log('Base URL:', baseUrl)
+      console.log('Stripe Secret Key:', process.env.STRIPE_SECRET_KEY ? 'Set' : 'Not set')
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [

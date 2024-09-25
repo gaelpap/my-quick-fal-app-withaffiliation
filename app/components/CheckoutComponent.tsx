@@ -1,22 +1,13 @@
 import { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
 
 function CheckoutComponent() {
   const [error, setError] = useState<string | null>(null);
 
-  const handlePurchase = async () => {
-    try {
-      setError(null);
-      console.log('Starting purchase process...');
-      
-      const stripe = await stripePromise;
-      if (!stripe) {
-        throw new Error('Stripe failed to load');
-      }
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
 
-      console.log('Fetching checkout session...');
+    try {
       const response = await fetch('/api/purchase-image-credits', {
         method: 'POST',
         headers: {
@@ -24,26 +15,14 @@ function CheckoutComponent() {
         },
       });
 
-      console.log('Fetch response status:', response.status);
-      
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error response:', errorData);
-        throw new Error(errorData.message || 'Failed to create checkout session');
+        throw new Error('Failed to create checkout session');
       }
 
-      const session = await response.json();
-      console.log('Checkout session received:', session.id);
-
-      console.log('Redirecting to Stripe checkout...');
-      const result = await stripe.redirectToCheckout({
-        sessionId: session.id,
-      });
-
-      if (result.error) {
-        console.error('Stripe redirect error:', result.error);
-        throw new Error(result.error.message);
-      }
+      const { id: sessionId } = await response.json();
+      
+      // Redirect to Stripe Checkout
+      window.location.href = `https://checkout.stripe.com/pay/${sessionId}`;
     } catch (err) {
       console.error('Purchase error:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
@@ -52,7 +31,9 @@ function CheckoutComponent() {
 
   return (
     <div>
-      <button onClick={handlePurchase}>Purchase Credits</button>
+      <form onSubmit={handleSubmit}>
+        <button type="submit">Purchase Credits</button>
+      </form>
       {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
   );
